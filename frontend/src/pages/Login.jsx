@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosInstance';
 import { AuthContext } from '../context/AuthContext';
@@ -7,15 +7,15 @@ import { Link } from 'react-router-dom';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, login } = useContext(AuthContext);
+  const { user, login, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user) navigate('/feed');
-  }, [user, navigate]);
 
   const handleLogin = async () => {
     try {
+      if (!email.trim() || !password.trim()) {
+        return alert('Email and password required');
+      }
+
       const res = await axios.post('/auth/login', {
         email,
         password
@@ -33,6 +33,27 @@ const Login = () => {
     <div className="card p-4 shadow" style={{ width: '350px' }}>
       <h4 className="text-center mb-3">Login</h4>
 
+      {user ? (
+        <div className="alert alert-info py-2 small">
+          Logged in as <b>{user.name}</b>
+          <div className="mt-2 d-flex gap-2">
+            <button className="btn btn-sm btn-primary" onClick={() => navigate('/feed')}>
+              Go to feed
+            </button>
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => {
+                logout();
+                setEmail('');
+                setPassword('');
+              }}
+            >
+              Use another account
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <input
         className="form-control mb-2"
         placeholder="Email"
@@ -45,7 +66,7 @@ const Login = () => {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <button className="btn btn-primary w-100" onClick={handleLogin}>
+      <button className="btn btn-primary w-100" onClick={handleLogin} disabled={!!user}>
         Login
       </button>
 
