@@ -12,9 +12,12 @@ const formatTime = (d) => {
   }
 };
 
-const PostCard = ({ post, onUpdated }) => {
+const PostCard = ({ post, myUserId, onUpdated, onDeleted }) => {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(post.text || '');
+  const [editFile, setEditFile] = useState(null);
 
   const like = async () => {
     if (busy) return;
@@ -22,6 +25,37 @@ const PostCard = ({ post, onUpdated }) => {
     try {
       const res = await axios.put(`/posts/${post._id}/like`);
       onUpdated?.(res.data);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isMine = myUserId && String(post.userId) === String(myUserId);
+
+  const saveEdit = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('text', editText);
+      if (editFile) fd.append('image', editFile);
+
+      const res = await axios.put(`/posts/${post._id}`, fd);
+      onUpdated?.(res.data);
+      setEditing(false);
+      setEditFile(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const del = async () => {
+    if (busy) return;
+    if (!confirm('Delete this post?')) return;
+    setBusy(true);
+    try {
+      await axios.delete(`/posts/${post._id}`);
+      onDeleted?.(post._id);
     } finally {
       setBusy(false);
     }
@@ -51,13 +85,53 @@ const PostCard = ({ post, onUpdated }) => {
             </small>
           </div>
 
-          <button className="btn btn-primary btn-sm rounded-pill">
-            Follow
-          </button>
+          {isMine ? (
+            <div className="d-flex gap-2">
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => {
+                  setEditing((v) => !v);
+                  setEditText(post.text || '');
+                  setEditFile(null);
+                }}
+                disabled={busy}
+              >
+                {editing ? 'Cancel' : 'Edit'}
+              </button>
+              <button className="btn btn-outline-danger btn-sm" onClick={del} disabled={busy}>
+                Delete
+              </button>
+            </div>
+          ) : (
+            <button className="btn btn-primary btn-sm rounded-pill">Follow</button>
+          )}
         </div>
 
         {/* Content */}
-        {post.text ? <p className="mt-3 mb-2">{post.text}</p> : null}
+        {editing ? (
+          <div className="mt-3">
+            <textarea
+              className="form-control"
+              rows="2"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+            />
+
+            <div className="d-flex align-items-center justify-content-between mt-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+              />
+
+              <button className="btn btn-primary btn-sm" onClick={saveEdit} disabled={busy}>
+                Save
+              </button>
+            </div>
+          </div>
+        ) : post.text ? (
+          <p className="mt-3 mb-2">{post.text}</p>
+        ) : null}
 
         {post.image && (
           <img

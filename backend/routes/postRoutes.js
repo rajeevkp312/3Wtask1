@@ -9,7 +9,9 @@ const {
   createPost,
   getAllPosts,
   likePost,
-  addComment
+  addComment,
+  updatePost,
+  deletePost
 } = require('../controllers/postController');
 
 const uploadDir = path.join(__dirname, '..', 'uploads');
@@ -29,5 +31,7 @@ router.post('/', protect, upload.single('image'), createPost);
 router.get('/', getAllPosts);
 router.put('/:id/like', protect, likePost);
 router.post('/:id/comment', protect, addComment);
+router.put('/:id', protect, upload.single('image'), updatePost);
+router.delete('/:id', protect, deletePost);
 
 module.exports = router;

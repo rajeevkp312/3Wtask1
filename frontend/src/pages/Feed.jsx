@@ -48,6 +48,10 @@ const Feed = () => {
     setPosts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
   };
 
+  const removePost = (id) => {
+    setPosts((prev) => prev.filter((p) => p._id !== id));
+  };
+
   return (
     <>
       <Navbar />
@@ -63,7 +67,13 @@ const Feed = () => {
           <div className="text-center text-muted mt-4">No posts yet</div>
         ) : (
           posts.map((p) => (
-            <PostCard key={p._id} post={p} onUpdated={patchPost} />
+            <PostCard
+              key={p._id}
+              post={p}
+              myUserId={user?.id}
+              onUpdated={patchPost}
+              onDeleted={removePost}
+            />
           ))
         )}
       </div>
